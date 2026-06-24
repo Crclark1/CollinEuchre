@@ -62,11 +62,17 @@ function render() {
   document.getElementById("message").textContent = state.phaseMessage;
 
   document.getElementById("dealer").textContent = seatName(state.dealer);
-  document.getElementById("upcard").innerHTML = state.upcard ? cardHtml(state.upcard) : "-";
-  document.getElementById("trump").textContent = state.trump ? suitSymbol(state.trump) : "-";
+  document.getElementById("upcard").innerHTML = state.upcard
+    ? cardHtml(state.upcard)
+    : "-";
+  document.getElementById("trump").textContent = state.trump
+    ? suitSymbol(state.trump)
+    : "-";
   document.getElementById("tricks").textContent = `Team 1 ${state.tricks[0]} - Team 2 ${state.tricks[1]}`;
 
   renderSeats();
+  renderUpcardPile();
+  renderBidLog();
   renderTrick();
   renderHand();
   renderActions();
@@ -116,12 +122,63 @@ function renderSeat(elementId, seat, label) {
     .map(() => `<span class="card-back"></span>`)
     .join("");
 
+  const trumpBadge = player.calledSuit
+    ? `<div class="trump-badge">Called ${suitSymbol(player.calledSuit)}</div>`
+    : "";
+
   element.innerHTML = `
     <div class="seat-name">${player.name}</div>
     <div class="seat-label">${label}${player.bot ? " · Bot" : ""}</div>
+    ${trumpBadge}
     <div class="mini-cards">${backs}</div>
     ${seat === state.dealer ? `<div class="dealer-chip">D</div>` : ""}
   `;
+}
+
+function renderUpcardPile() {
+  let pile = document.getElementById("upcardPile");
+
+  if (!pile) {
+    pile = document.createElement("div");
+    pile.id = "upcardPile";
+    pile.className = "upcard-pile";
+
+    const center = document.querySelector(".center-area");
+    center.insertBefore(pile, document.getElementById("trick"));
+  }
+
+  if (state.phase === "bidding" && state.upcard) {
+    pile.innerHTML = `
+      <div class="upcard-title">Upcard</div>
+      <div class="card upcard ${colorClass(state.upcard.suit)}">${cardHtml(state.upcard)}</div>
+    `;
+    pile.style.display = "grid";
+  } else {
+    pile.style.display = "none";
+  }
+}
+
+function renderBidLog() {
+  let log = document.getElementById("bidLog");
+
+  if (!log) {
+    log = document.createElement("div");
+    log.id = "bidLog";
+    log.className = "bid-log";
+
+    const center = document.querySelector(".center-area");
+    center.appendChild(log);
+  }
+
+  if (!state.bidLog || !state.bidLog.length) {
+    log.innerHTML = "";
+    return;
+  }
+
+  log.innerHTML = state.bidLog
+    .slice(-4)
+    .map(item => `<div>${item}</div>`)
+    .join("");
 }
 
 function renderTrick() {
@@ -218,10 +275,8 @@ function renderActions() {
 
     if (state.biddingRound === 2) {
       for (const suit of ["S", "H", "D", "C"]) {
-        if (suit === state.upcard.suit) continue;
-
         actions.appendChild(
-          makeButton(`Make ${suitSymbol(suit)}`, () => {
+          makeButton(`Call ${suitSymbol(suit)}`, () => {
             socket.emit("makeTrump", {
               suit,
               alone: document.getElementById("aloneCheck").checked
