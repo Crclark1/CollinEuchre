@@ -27,6 +27,13 @@ document.getElementById("join").onclick = () => {
   });
 };
 
+document.getElementById("copyRoom").onclick = async () => {
+  if (!state) return;
+
+  await navigator.clipboard.writeText(state.id);
+  alert("Room code copied: " + state.id);
+};
+
 function getName() {
   return document.getElementById("name").value.trim() || "Player";
 }
@@ -52,207 +59,204 @@ function render() {
   document.getElementById("room").textContent = state.id;
   document.getElementById("score0").textContent = state.score[0];
   document.getElementById("score1").textContent = state.score[1];
-  document.getElementById("tricks0").textContent = state.tricks[0];
-  document.getElementById("tricks1").textContent = state.tricks[1];
   document.getElementById("message").textContent = state.phaseMessage;
-  document.getElementById("dealer").textContent = seatName(state.dealer);
-  document.getElementById("upcard").textContent = state.upcard
-    ? cardText(state.upcard)
-    : "-";
-  document.getElementById("trump").textContent = state.trump || "-";
 
-  renderPlayers();
+  document.getElementById("dealer").textContent = seatName(state.dealer);
+  document.getElementById("upcard").innerHTML = state.upcard ? cardHtml(state.upcard) : "-";
+  document.getElementById("trump").textContent = state.trump ? suitSymbol(state.trump) : "-";
+  document.getElementById("tricks").textContent = `Team 1 ${state.tricks[0]} - Team 2 ${state.tricks[1]}`;
+
+  renderSeats();
   renderTrick();
   renderHand();
   renderActions();
 }
 
-function renderPlayers() {
-  const playersElement = document.getElementById("players");
-  playersElement.innerHTML = "";
+function renderSeats() {
+  const viewerSeat = state.viewerSeat ?? 0;
 
-  for (const player of state.players) {
-    const playerElement = document.createElement("div");
-    playerElement.className = "player";
+  const positions = {
+    bottom: viewerSeat,
+    left: (viewerSeat + 1) % 4,
+    top: (viewerSeat + 2) % 4,
+    right: (viewerSeat + 3) % 4
+  };
 
-    if (player.seat === state.currentTurn) {
-      playerElement.classList.add("turn");
-    }
-
-    if (player.seat === state.viewerSeat) {
-      playerElement.classList.add("you");
-    }
-
-    playerElement.innerHTML = `
-      <strong>${player.name}</strong>
-      <span>Seat ${player.seat + 1}</span>
-      <span>${player.cardCount} cards</span>
-      <span>${player.bot ? "Bot" : "Human"}</span>
-    `;
-
-    playersElement.appendChild(playerElement);
-  }
+  renderSeat("playerBottom", positions.bottom, "You");
+  renderSeat("playerLeft", positions.left, "Opponent");
+  renderSeat("playerTop", positions.top, "Partner");
+  renderSeat("playerRight", positions.right, "Opponent");
 }
 
-function renderTrick() {
-  const trickElement = document.getElementById("trick");
-  trickElement.innerHTML = "<h2>Current Trick</h2>";
+function renderSeat(elementId, seat, label) {
+  const player = state.players.find(p => p.seat === seat);
+  const element = document.getElementById(elementId);
 
-  if (!state.trick.length) {
-    const empty = document.createElement("p");
-    empty.textContent = "No cards played yet.";
-    trickElement.appendChild(empty);
+  if (!player) {
+    element.innerHTML = "";
     return;
   }
 
-  const cardsRow = document.createElement("div");
-  cardsRow.className = "cards";
+  element.className = "seat";
 
-  for (const play of state.trick) {
-    const cardElement = document.createElement("div");
-    cardElement.className = `card ${colorClass(play.card.suit)}`;
-    cardElement.innerHTML = `<small>${seatName(play.seat)}</small><br>${cardText(play.card)}`;
-    cardsRow.appendChild(cardElement);
+  if (elementId === "playerTop") element.classList.add("seat-top");
+  if (elementId === "playerLeft") element.classList.add("seat-left");
+  if (elementId === "playerRight") element.classList.add("seat-right");
+  if (elementId === "playerBottom") element.classList.add("seat-bottom");
+
+  if (seat === state.currentTurn) {
+    element.classList.add("active-seat");
   }
 
-  trickElement.appendChild(cardsRow);
+  if (seat === state.dealer) {
+    element.classList.add("dealer-seat");
+  }
+
+  const backs = Array.from({ length: player.cardCount })
+    .map(() => `<span class="card-back"></span>`)
+    .join("");
+
+  element.innerHTML = `
+    <div class="seat-name">${player.name}</div>
+    <div class="seat-label">${label}${player.bot ? " · Bot" : ""}</div>
+    <div class="mini-cards">${backs}</div>
+    ${seat === state.dealer ? `<div class="dealer-chip">D</div>` : ""}
+  `;
+}
+
+function renderTrick() {
+  const trick = document.getElementById("trick");
+  trick.innerHTML = "";
+
+  if (!state.trick.length) {
+    trick.innerHTML = `<div class="empty-trick">Waiting for cards...</div>`;
+    return;
+  }
+
+  for (const play of state.trick) {
+    const div = document.createElement("div");
+    div.className = "played-card-wrap";
+    div.innerHTML = `
+      <div class="played-by">${seatName(play.seat)}</div>
+      <div class="card ${colorClass(play.card.suit)}">${cardHtml(play.card)}</div>
+    `;
+    trick.appendChild(div);
+  }
 }
 
 function renderHand() {
-  const handElement = document.getElementById("hand");
-  handElement.innerHTML = "";
+  const hand = document.getElementById("hand");
+  hand.innerHTML = "";
 
   for (const card of state.hand) {
-    const cardButton = document.createElement("button");
-    cardButton.className = `card ${colorClass(card.suit)}`;
-    cardButton.textContent = cardText(card);
+    const button = document.createElement("button");
+    button.className = `card hand-card ${colorClass(card.suit)}`;
+    button.innerHTML = cardHtml(card);
 
     if (state.phase === "playing") {
       const valid = state.validCards.includes(card.id);
-      cardButton.disabled = !valid;
-      cardButton.onclick = () => {
-        socket.emit("playCard", {
-          cardId: card.id
-        });
-      };
+      button.disabled = !valid;
+      button.onclick = () => socket.emit("playCard", { cardId: card.id });
     } else if (state.phase === "dealerDiscard") {
-      cardButton.onclick = () => {
-        socket.emit("dealerDiscard", {
-          cardId: card.id
-        });
-      };
+      button.onclick = () => socket.emit("dealerDiscard", { cardId: card.id });
     } else if (state.phase === "bottomsDiscard") {
-      cardButton.onclick = () => {
-        toggleDiscard(card.id, cardButton);
-      };
+      button.onclick = () => toggleDiscard(card.id, button);
     } else {
-      cardButton.disabled = true;
+      button.disabled = true;
     }
 
-    handElement.appendChild(cardButton);
+    hand.appendChild(button);
   }
 }
 
 function renderActions() {
-  const actionsElement = document.getElementById("actions");
-  actionsElement.innerHTML = "";
+  const actions = document.getElementById("actions");
+  actions.innerHTML = "";
 
   const isMyTurn = state.viewerSeat === state.currentTurn;
 
   if (state.phase === "lobby") {
-    const info = document.createElement("p");
-    info.textContent = "Share the room code with friends. Add bots to empty seats if needed.";
-    actionsElement.appendChild(info);
+    actions.innerHTML = `
+      <p>Share the room code with friends.</p>
+      <button id="fillBots">Fill Empty Seats With Bots</button>
+      <button id="startGame">Start Game</button>
+    `;
 
-    const botsButton = document.createElement("button");
-    botsButton.textContent = "Fill Empty Seats With Bots";
-    botsButton.onclick = () => {
-      socket.emit("addBots");
-    };
-    actionsElement.appendChild(botsButton);
-
-    const startButton = document.createElement("button");
-    startButton.textContent = "Start Game";
-    startButton.onclick = () => {
-      socket.emit("startGame");
-    };
-    actionsElement.appendChild(startButton);
-
+    document.getElementById("fillBots").onclick = () => socket.emit("addBots");
+    document.getElementById("startGame").onclick = () => socket.emit("startGame");
     return;
   }
 
-  if (state.phase === "bidding" && isMyTurn) {
-    const passButton = document.createElement("button");
-    passButton.textContent = "Pass";
-    passButton.onclick = () => {
-      socket.emit("pass");
-    };
-    actionsElement.appendChild(passButton);
+  if (!isMyTurn) {
+    return;
+  }
+
+  if (state.phase === "bidding") {
+    const pass = makeButton("Pass", () => socket.emit("pass"));
+    actions.appendChild(pass);
 
     if (state.canBottoms) {
-      const bottomsButton = document.createElement("button");
-      bottomsButton.textContent = "Bottoms";
-      bottomsButton.className = "special";
-      bottomsButton.onclick = () => {
-        socket.emit("bottoms");
-      };
-      actionsElement.appendChild(bottomsButton);
+      const bottoms = makeButton("Bottoms", () => socket.emit("bottoms"));
+      bottoms.classList.add("bottoms-button");
+      actions.appendChild(bottoms);
     }
 
-    const aloneLabel = document.createElement("label");
-    aloneLabel.className = "alone";
-    aloneLabel.innerHTML = `<input id="aloneCheck" type="checkbox" /> Go alone`;
-    actionsElement.appendChild(aloneLabel);
+    const alone = document.createElement("label");
+    alone.className = "alone-check";
+    alone.innerHTML = `<input id="aloneCheck" type="checkbox" /> Go alone`;
+    actions.appendChild(alone);
 
     if (state.biddingRound === 1) {
-      const orderButton = document.createElement("button");
-      orderButton.textContent = `Order Up ${state.upcard.suit}`;
-      orderButton.onclick = () => {
-        socket.emit("orderUp", {
-          alone: document.getElementById("aloneCheck").checked
-        });
-      };
-      actionsElement.appendChild(orderButton);
+      actions.appendChild(
+        makeButton(`Order Up ${suitSymbol(state.upcard.suit)}`, () => {
+          socket.emit("orderUp", {
+            alone: document.getElementById("aloneCheck").checked
+          });
+        })
+      );
     }
 
     if (state.biddingRound === 2) {
       for (const suit of ["S", "H", "D", "C"]) {
         if (suit === state.upcard.suit) continue;
 
-        const suitButton = document.createElement("button");
-        suitButton.textContent = `Make ${suit}`;
-        suitButton.onclick = () => {
-          socket.emit("makeTrump", {
-            suit,
-            alone: document.getElementById("aloneCheck").checked
-          });
-        };
-
-        actionsElement.appendChild(suitButton);
+        actions.appendChild(
+          makeButton(`Make ${suitSymbol(suit)}`, () => {
+            socket.emit("makeTrump", {
+              suit,
+              alone: document.getElementById("aloneCheck").checked
+            });
+          })
+        );
       }
     }
   }
 
-  if (state.phase === "bottomsDiscard" && isMyTurn) {
+  if (state.phase === "bottomsDiscard") {
     const instruction = document.createElement("p");
-    instruction.textContent = "Choose 3 cards to discard after using Bottoms.";
-    actionsElement.appendChild(instruction);
+    instruction.textContent = "Bottoms: choose 3 cards to discard.";
+    actions.appendChild(instruction);
 
-    const doneButton = document.createElement("button");
-    doneButton.textContent = "Discard Selected";
-    doneButton.onclick = () => {
-      if (selectedDiscards.length !== 3) {
-        alert("Select exactly 3 cards.");
-        return;
-      }
+    actions.appendChild(
+      makeButton("Discard Selected", () => {
+        if (selectedDiscards.length !== 3) {
+          alert("Select exactly 3 cards.");
+          return;
+        }
 
-      socket.emit("finishBottoms", {
-        cardIds: selectedDiscards
-      });
-    };
-
-    actionsElement.appendChild(doneButton);
+        socket.emit("finishBottoms", {
+          cardIds: selectedDiscards
+        });
+      })
+    );
   }
+}
+
+function makeButton(text, onClick) {
+  const button = document.createElement("button");
+  button.textContent = text;
+  button.onclick = onClick;
+  return button;
 }
 
 function toggleDiscard(cardId, button) {
@@ -273,19 +277,23 @@ function toggleDiscard(cardId, button) {
 
 function seatName(seat) {
   const player = state.players.find(p => p.seat === seat);
-
   return player ? player.name : `Seat ${seat + 1}`;
 }
 
-function cardText(card) {
-  const suits = {
+function cardHtml(card) {
+  return `
+    <span class="rank">${card.rank}</span>
+    <span class="suit">${suitSymbol(card.suit)}</span>
+  `;
+}
+
+function suitSymbol(suit) {
+  return {
     S: "♠",
     H: "♥",
     D: "♦",
     C: "♣"
-  };
-
-  return `${card.rank}${suits[card.suit]}`;
+  }[suit];
 }
 
 function colorClass(suit) {
