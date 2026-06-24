@@ -57,18 +57,20 @@ function render() {
   game.classList.remove("hidden");
 
   document.getElementById("room").textContent = state.id;
-  document.getElementById("score0").textContent = state.score[0];
-  document.getElementById("score1").textContent = state.score[1];
   document.getElementById("message").textContent = state.phaseMessage;
 
+  const board0 = state.scoreboard?.[0];
+  const board1 = state.scoreboard?.[1];
+
+  document.getElementById("scoreLabel0").textContent = board0 ? board0.label : "Seats 1 & 3";
+  document.getElementById("scoreLabel1").textContent = board1 ? board1.label : "Seats 2 & 4";
+  document.getElementById("score0").textContent = board0 ? board0.score : state.score[0];
+  document.getElementById("score1").textContent = board1 ? board1.score : state.score[1];
+
   document.getElementById("dealer").textContent = seatName(state.dealer);
-  document.getElementById("upcard").innerHTML = state.upcard
-    ? cardHtml(state.upcard)
-    : "-";
-  document.getElementById("trump").textContent = state.trump
-    ? suitSymbol(state.trump)
-    : "-";
-  document.getElementById("tricks").textContent = `Team 1 ${state.tricks[0]} - Team 2 ${state.tricks[1]}`;
+  document.getElementById("upcard").innerHTML = state.upcard ? cardHtml(state.upcard) : "-";
+  document.getElementById("trump").textContent = state.trump ? suitSymbol(state.trump) : "-";
+  document.getElementById("tricks").textContent = `${state.tricks[0]} - ${state.tricks[1]}`;
 
   renderSeats();
   renderUpcardPile();
@@ -122,14 +124,22 @@ function renderSeat(elementId, seat, label) {
     .map(() => `<span class="card-back"></span>`)
     .join("");
 
-  const trumpBadge = player.calledSuit
-    ? `<div class="trump-badge">Called ${suitSymbol(player.calledSuit)}</div>`
-    : "";
+  let badgeHtml = "";
+
+  if (player.calledSuit) {
+    badgeHtml += `<div class="trump-badge">Called ${suitSymbol(player.calledSuit)}</div>`;
+  } else if (player.pickedUpSuit) {
+    badgeHtml += `<div class="pickup-badge">Picked Up ${suitSymbol(player.pickedUpSuit)}</div>`;
+  }
 
   element.innerHTML = `
     <div class="seat-name">${player.name}</div>
     <div class="seat-label">${label}${player.bot ? " · Bot" : ""}</div>
-    ${trumpBadge}
+    <div class="seat-stats">
+      <span>Tricks: ${player.teamTricks}</span>
+      <span>Game: ${player.teamScore}</span>
+    </div>
+    ${badgeHtml}
     <div class="mini-cards">${backs}</div>
     ${seat === state.dealer ? `<div class="dealer-chip">D</div>` : ""}
   `;
@@ -172,11 +182,13 @@ function renderBidLog() {
 
   if (!state.bidLog || !state.bidLog.length) {
     log.innerHTML = "";
+    log.style.display = "none";
     return;
   }
 
+  log.style.display = "block";
   log.innerHTML = state.bidLog
-    .slice(-4)
+    .slice(-5)
     .map(item => `<div>${item}</div>`)
     .join("");
 }
