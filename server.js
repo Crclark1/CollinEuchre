@@ -12,6 +12,7 @@ const PORT = process.env.PORT || 3000;
 
 const SUITS = ["S", "H", "D", "C"];
 const RANKS = ["9", "10", "J", "Q", "K", "A"];
+
 const rooms = new Map();
 
 function shuffle(cards) {
@@ -111,6 +112,15 @@ function teamOfSeat(seat) {
   return seat % 2;
 }
 
+function suitSymbol(suit) {
+  return {
+    S: "♠",
+    H: "♥",
+    D: "♦",
+    C: "♣"
+  }[suit] || suit;
+}
+
 function createRoom(roomId) {
   const room = {
     id: roomId,
@@ -137,11 +147,20 @@ function createRoom(roomId) {
     trick: [],
     leadSuit: null,
     tricks: [0, 0],
+    bidLog: [],
     message: "Waiting for players."
   };
 
   rooms.set(roomId, room);
   return room;
+}
+
+function addBidLog(room, text) {
+  room.bidLog.push(text);
+
+  if (room.bidLog.length > 10) {
+    room.bidLog.shift();
+  }
 }
 
 function publicState(room, socketId) {
@@ -156,7 +175,9 @@ function publicState(room, socketId) {
       name: player.name || `Seat ${player.seat + 1}`,
       bot: player.bot,
       connected: Boolean(player.socketId) || player.bot,
-      cardCount: player.hand.length
+      cardCount: player.hand.length,
+      calledSuit: room.maker === player.seat ? room.trump : null,
+      isMaker: room.maker === player.seat
     })),
     dealer: room.dealer,
     score: room.score,
@@ -174,6 +195,7 @@ function publicState(room, socketId) {
     trick: room.trick,
     leadSuit: room.leadSuit,
     tricks: room.tricks,
+    bidLog: room.bidLog,
     canBottoms:
       viewer &&
       room.phase === "bidding" &&
@@ -212,7 +234,10 @@ function joinSeat(room, socket, name, requestedSeat = null) {
 
   if (seat === -1) {
     seat = room.players.findIndex(player => player.bot);
-    if (seat !== -1) room.players[seat].bot = false;
+
+    if (seat !== -1) {
+      room.players[seat].bot = false;
+    }
   }
 
   if (seat === -1) {
@@ -251,6 +276,7 @@ function startHand(room) {
   room.trick = [];
   room.leadSuit = null;
   room.tricks = [0, 0];
+  room.bidLog = [];
 
   for (const player of room.players) {
     player.hand = [];
@@ -272,7 +298,9 @@ function startHand(room) {
 
   room.upcard = room.kitty[0];
   room.currentTurn = (room.dealer + 1) % 4;
-  room.message = `${room.players[room.currentTurn].name}'s bid.`;
+  room.message = `${room.players[room.currentTurn].name}: pass, order up ${suitSymbol(room.upcard.suit)}, or use Bottoms.`;
+
+  addBidLog(room, `Upcard is ${room.upcard.rank}${suitSymbol(room.upcard.suit)}.`);
 
   emitRoom(room);
   botMaybeAct(room);
@@ -285,7 +313,9 @@ function nextBidTurn(room) {
     room.biddingRound = 2;
     room.passed = [];
     room.currentTurn = (room.dealer + 1) % 4;
-    room.message = `Round 2 bidding. ${room.players[room.currentTurn].name}'s bid.`;
+    room.message = `Everyone passed the upcard. ${room.players[room.currentTurn].name}: choose any suit, pass, or use Bottoms.`;
+
+    addBidLog(room, "Everyone passed the upcard. Round 2 begins.");
 
     emitRoom(room);
     botMaybeAct(room);
@@ -293,26 +323,45 @@ function nextBidTurn(room) {
   }
 
   if (room.passed.length >= 4 && room.biddingRound === 2) {
-    room.message = "Everyone passed. New hand.";
+    room.message = "Everyone passed both rounds. New hand.";
+    addBidLog(room, "Everyone passed. The hand is redealt.");
+
     room.dealer = (room.dealer + 1) % 4;
 
     emitRoom(room);
 
     setTimeout(() => {
       startHand(room);
-    }, 1200);
+    }, 1400);
 
     return;
   }
 
   room.currentTurn = (room.currentTurn + 1) % 4;
-  room.message = `${room.players[room.currentTurn].name}'s bid.`;
+
+  if (room.biddingRound === 1) {
+    room.message = `${room.players[room.currentTurn].name}: pass, order up ${suitSymbol(room.upcard.suit)}, or use Bottoms.`;
+  } else {
+    room.message = `${room.players[room.currentTurn].name}: choose any suit, pass, or use Bottoms.`;
+  }
 
   emitRoom(room);
   botMaybeAct(room);
 }
 
+function playerPass(room, seat) {
+  if (room.phase !== "bidding") return;
+  if (seat !== room.currentTurn) return;
+
+  addBidLog(room, `${room.players[seat].name} passed.`);
+  nextBidTurn(room);
+}
+
 function orderUp(room, seat, alone) {
+  if (room.phase !== "bidding") return;
+  if (room.biddingRound !== 1) return;
+  if (seat !== room.currentTurn) return;
+
   const trump = room.upcard.suit;
 
   room.trump = trump;
@@ -325,9 +374,14 @@ function orderUp(room, seat, alone) {
   dealer.hand.push(room.upcard);
   room.kitty = room.kitty.filter(card => card.id !== room.upcard.id);
 
+  addBidLog(
+    room,
+    `${room.players[seat].name} ordered up ${suitSymbol(trump)}${room.alone ? " and is going alone" : ""}.`
+  );
+
   room.phase = "dealerDiscard";
   room.currentTurn = room.dealer;
-  room.message = `${dealer.name} must discard one card. Trump is ${trump}.`;
+  room.message = `${dealer.name} picked up the upcard and must discard one card. Trump is ${suitSymbol(trump)}.`;
 
   emitRoom(room);
 
@@ -340,13 +394,20 @@ function orderUp(room, seat, alone) {
 }
 
 function makeTrump(room, seat, suit, alone) {
+  if (room.phase !== "bidding") return;
+  if (room.biddingRound !== 2) return;
+  if (seat !== room.currentTurn) return;
   if (!SUITS.includes(suit)) return;
-  if (suit === room.upcard.suit) return;
 
   room.trump = suit;
   room.maker = seat;
   room.alone = Boolean(alone);
   room.alonePartnerSeat = room.alone ? (seat + 2) % 4 : null;
+
+  addBidLog(
+    room,
+    `${room.players[seat].name} called ${suitSymbol(suit)}${room.alone ? " and is going alone" : ""}.`
+  );
 
   beginPlay(room);
 }
@@ -360,7 +421,10 @@ function discardDealer(room, seat, cardId) {
 
   if (index === -1) return;
 
+  const discarded = player.hand[index];
   player.hand.splice(index, 1);
+
+  addBidLog(room, `${player.name} discarded ${discarded.rank}${suitSymbol(discarded.suit)}.`);
 
   beginPlay(room);
 }
@@ -373,7 +437,7 @@ function beginPlay(room) {
     room.currentTurn = (room.currentTurn + 1) % 4;
   }
 
-  room.message = `Trump is ${room.trump}. ${room.players[room.currentTurn].name} leads.`;
+  room.message = `Trump is ${suitSymbol(room.trump)}. ${room.players[room.currentTurn].name} leads.`;
 
   emitRoom(room);
   botMaybeAct(room);
@@ -517,7 +581,10 @@ function useBottoms(room, seat) {
   room.kitty = [room.upcard];
 
   room.phase = "bottomsDiscard";
-  room.message = `${player.name} used Bottoms and must discard 3 cards. This counts as a pass.`;
+
+  addBidLog(room, `${player.name} used Bottoms. This counts as a pass.`);
+
+  room.message = `${player.name} used Bottoms and must discard 3 cards.`;
 
   emitRoom(room);
 
@@ -586,7 +653,10 @@ function botShouldCall(room, seat, suit) {
     const eff = effectiveSuit(card, suit);
 
     if (eff === suit) strength += 1;
-    if (card.rank === "A" && eff !== suit) strength += 0.5;
+
+    if (card.rank === "A" && eff !== suit) {
+      strength += 0.5;
+    }
 
     if (
       card.rank === "J" &&
@@ -630,7 +700,7 @@ function botMaybeAct(room) {
 
   setTimeout(() => {
     if (room.phase === "bidding") {
-      if (hasBottoms(player.hand) && Math.random() < 0.5) {
+      if (hasBottoms(player.hand) && Math.random() < 0.35) {
         useBottoms(room, player.seat);
         return;
       }
@@ -641,22 +711,21 @@ function botMaybeAct(room) {
         if (shouldCall) {
           orderUp(room, player.seat, Math.random() < 0.15);
         } else {
-          nextBidTurn(room);
+          playerPass(room, player.seat);
         }
 
         return;
       }
 
       if (room.biddingRound === 2) {
-        const possibleSuits = SUITS.filter(suit => suit !== room.upcard.suit);
-        const chosenSuit = possibleSuits.find(suit => {
+        const chosenSuit = SUITS.find(suit => {
           return botShouldCall(room, player.seat, suit);
         });
 
         if (chosenSuit) {
           makeTrump(room, player.seat, chosenSuit, Math.random() < 0.15);
         } else {
-          nextBidTurn(room);
+          playerPass(room, player.seat);
         }
       }
     }
@@ -740,10 +809,8 @@ io.on("connection", socket => {
     const room = rooms.get(socket.data.roomId);
 
     if (!room) return;
-    if (room.phase !== "bidding") return;
-    if (socket.data.seat !== room.currentTurn) return;
 
-    nextBidTurn(room);
+    playerPass(room, socket.data.seat);
   });
 
   socket.on("bottoms", () => {
@@ -766,9 +833,6 @@ io.on("connection", socket => {
     const room = rooms.get(socket.data.roomId);
 
     if (!room) return;
-    if (room.phase !== "bidding") return;
-    if (room.biddingRound !== 1) return;
-    if (socket.data.seat !== room.currentTurn) return;
 
     orderUp(room, socket.data.seat, alone);
   });
@@ -777,9 +841,6 @@ io.on("connection", socket => {
     const room = rooms.get(socket.data.roomId);
 
     if (!room) return;
-    if (room.phase !== "bidding") return;
-    if (room.biddingRound !== 2) return;
-    if (socket.data.seat !== room.currentTurn) return;
 
     makeTrump(room, socket.data.seat, suit, alone);
   });
@@ -820,5 +881,5 @@ io.on("connection", socket => {
 });
 
 server.listen(PORT, () => {
-  console.log(`CollinEuchre running on port ${PORT}`);
+  console.log(`Collin Euchre running on port ${PORT}`);
 });
