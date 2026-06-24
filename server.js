@@ -112,6 +112,10 @@ function teamOfSeat(seat) {
   return seat % 2;
 }
 
+function teamSeats(team) {
+  return team === 0 ? [0, 2] : [1, 3];
+}
+
 function suitSymbol(suit) {
   return {
     S: "♠",
@@ -119,6 +123,13 @@ function suitSymbol(suit) {
     D: "♦",
     C: "♣"
   }[suit] || suit;
+}
+
+function teamLabel(room, team) {
+  const [a, b] = teamSeats(team);
+  const aName = room.players[a].name || `Seat ${a + 1}`;
+  const bName = room.players[b].name || `Seat ${b + 1}`;
+  return `${aName} & ${bName}`;
 }
 
 function createRoom(roomId) {
@@ -148,6 +159,7 @@ function createRoom(roomId) {
     leadSuit: null,
     tricks: [0, 0],
     bidLog: [],
+    pickedUpSeat: null,
     message: "Waiting for players."
   };
 
@@ -158,7 +170,7 @@ function createRoom(roomId) {
 function addBidLog(room, text) {
   room.bidLog.push(text);
 
-  if (room.bidLog.length > 10) {
+  if (room.bidLog.length > 12) {
     room.bidLog.shift();
   }
 }
@@ -170,17 +182,39 @@ function publicState(room, socketId) {
     id: room.id,
     viewerSeat: viewer ? viewer.seat : null,
     phase: room.phase,
-    players: room.players.map(player => ({
-      seat: player.seat,
-      name: player.name || `Seat ${player.seat + 1}`,
-      bot: player.bot,
-      connected: Boolean(player.socketId) || player.bot,
-      cardCount: player.hand.length,
-      calledSuit: room.maker === player.seat ? room.trump : null,
-      isMaker: room.maker === player.seat
-    })),
+    players: room.players.map(player => {
+      const teamIndex = teamOfSeat(player.seat);
+
+      return {
+        seat: player.seat,
+        name: player.name || `Seat ${player.seat + 1}`,
+        bot: player.bot,
+        connected: Boolean(player.socketId) || player.bot,
+        cardCount: player.hand.length,
+        calledSuit: room.maker === player.seat ? room.trump : null,
+        pickedUpSuit: room.pickedUpSeat === player.seat ? room.trump : null,
+        isMaker: room.maker === player.seat,
+        teamIndex,
+        teamTricks: room.tricks[teamIndex],
+        teamScore: room.score[teamIndex]
+      };
+    }),
     dealer: room.dealer,
     score: room.score,
+    scoreboard: [
+      {
+        team: 0,
+        label: teamLabel(room, 0),
+        score: room.score[0],
+        tricks: room.tricks[0]
+      },
+      {
+        team: 1,
+        label: teamLabel(room, 1),
+        score: room.score[1],
+        tricks: room.tricks[1]
+      }
+    ],
     handNumber: room.handNumber,
     upcard: room.upcard,
     trump: room.trump,
@@ -271,12 +305,14 @@ function startHand(room) {
   room.maker = null;
   room.alone = false;
   room.alonePartnerSeat = null;
+  room.currentTurn = 0;
   room.biddingRound = 1;
   room.passed = [];
   room.trick = [];
   room.leadSuit = null;
   room.tricks = [0, 0];
   room.bidLog = [];
+  room.pickedUpSeat = null;
 
   for (const player of room.players) {
     player.hand = [];
@@ -324,7 +360,7 @@ function nextBidTurn(room) {
 
   if (room.passed.length >= 4 && room.biddingRound === 2) {
     room.message = "Everyone passed both rounds. New hand.";
-    addBidLog(room, "Everyone passed. The hand is redealt.");
+    addBidLog(room, "Everyone passed. Redealing.");
 
     room.dealer = (room.dealer + 1) % 4;
 
@@ -368,6 +404,7 @@ function orderUp(room, seat, alone) {
   room.maker = seat;
   room.alone = Boolean(alone);
   room.alonePartnerSeat = room.alone ? (seat + 2) % 4 : null;
+  room.pickedUpSeat = room.dealer;
 
   const dealer = room.players[room.dealer];
 
@@ -378,10 +415,11 @@ function orderUp(room, seat, alone) {
     room,
     `${room.players[seat].name} ordered up ${suitSymbol(trump)}${room.alone ? " and is going alone" : ""}.`
   );
+  addBidLog(room, `${dealer.name} picked up the upcard.`);
 
   room.phase = "dealerDiscard";
   room.currentTurn = room.dealer;
-  room.message = `${dealer.name} picked up the upcard and must discard one card. Trump is ${suitSymbol(trump)}.`;
+  room.message = `${dealer.name} must discard one card. Trump is ${suitSymbol(trump)}.`;
 
   emitRoom(room);
 
@@ -403,6 +441,7 @@ function makeTrump(room, seat, suit, alone) {
   room.maker = seat;
   room.alone = Boolean(alone);
   room.alonePartnerSeat = room.alone ? (seat + 2) % 4 : null;
+  room.pickedUpSeat = null;
 
   addBidLog(
     room,
@@ -533,29 +572,34 @@ function finishHand(room) {
 
   let points = 0;
   let winnerTeam = makerTeam;
+  let summary = "";
 
   if (makerTricks >= 3) {
     if (makerTricks === 5 && room.alone) {
       points = 4;
+      summary = `${teamLabel(room, makerTeam)} made trump alone and swept all 5 tricks for 4 points.`;
     } else if (makerTricks === 5) {
       points = 2;
+      summary = `${teamLabel(room, makerTeam)} made trump and swept all 5 tricks for 2 points.`;
     } else {
       points = 1;
+      summary = `${teamLabel(room, makerTeam)} made trump and took 3 or more tricks for 1 point.`;
     }
   } else {
     winnerTeam = defenderTeam;
     points = 2;
+    summary = `${teamLabel(room, defenderTeam)} euchred the makers for 2 points.`;
   }
 
   room.score[winnerTeam] += points;
   room.phase = "handOver";
-  room.message = `Team ${winnerTeam + 1} scores ${points}. Score: ${room.score[0]}-${room.score[1]}.`;
+  room.message = summary;
 
   emitRoom(room);
 
   if (room.score[0] >= 10 || room.score[1] >= 10) {
     room.phase = "gameOver";
-    room.message = `Team ${room.score[0] >= 10 ? 1 : 2} wins the game.`;
+    room.message = `${teamLabel(room, winnerTeam)} win the game.`;
     emitRoom(room);
     return;
   }
