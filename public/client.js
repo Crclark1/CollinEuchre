@@ -62,14 +62,32 @@ function render() {
   const board0 = state.scoreboard?.[0];
   const board1 = state.scoreboard?.[1];
 
-  document.getElementById("scoreLabel0").textContent = board0 ? board0.label : "Seats 1 & 3";
-  document.getElementById("scoreLabel1").textContent = board1 ? board1.label : "Seats 2 & 4";
-  document.getElementById("score0").textContent = board0 ? board0.score : state.score[0];
-  document.getElementById("score1").textContent = board1 ? board1.score : state.score[1];
+  document.getElementById("scoreLabel0").textContent = board0
+    ? board0.label
+    : "Seats 1 & 3";
+
+  document.getElementById("scoreLabel1").textContent = board1
+    ? board1.label
+    : "Seats 2 & 4";
+
+  document.getElementById("score0").textContent = board0
+    ? board0.score
+    : state.score[0];
+
+  document.getElementById("score1").textContent = board1
+    ? board1.score
+    : state.score[1];
 
   document.getElementById("dealer").textContent = seatName(state.dealer);
-  document.getElementById("upcard").innerHTML = state.upcard ? cardHtml(state.upcard) : "-";
-  document.getElementById("trump").textContent = state.trump ? suitSymbol(state.trump) : "-";
+
+  document.getElementById("upcard").innerHTML = state.upcard
+    ? cardHtml(state.upcard)
+    : "-";
+
+  document.getElementById("trump").textContent = state.trump
+    ? suitSymbol(state.trump)
+    : "-";
+
   document.getElementById("tricks").textContent = `${state.tricks[0]} - ${state.tricks[1]}`;
 
   renderSeats();
@@ -135,12 +153,18 @@ function renderSeat(elementId, seat, label) {
   element.innerHTML = `
     <div class="seat-name">${player.name}</div>
     <div class="seat-label">${label}${player.bot ? " · Bot" : ""}</div>
+
     <div class="seat-stats">
       <span>Tricks: ${player.teamTricks}</span>
       <span>Game: ${player.teamScore}</span>
     </div>
+
     ${badgeHtml}
-    <div class="mini-cards">${backs}</div>
+
+    <div class="mini-cards">
+      ${backs}
+    </div>
+
     ${seat === state.dealer ? `<div class="dealer-chip">D</div>` : ""}
   `;
 }
@@ -160,7 +184,9 @@ function renderUpcardPile() {
   if (state.phase === "bidding" && state.upcard) {
     pile.innerHTML = `
       <div class="upcard-title">Upcard</div>
-      <div class="card upcard ${colorClass(state.upcard.suit)}">${cardHtml(state.upcard)}</div>
+      <div class="card upcard ${colorClass(state.upcard.suit)}">
+        ${cardHtml(state.upcard)}
+      </div>
     `;
     pile.style.display = "grid";
   } else {
@@ -180,7 +206,15 @@ function renderBidLog() {
     center.appendChild(log);
   }
 
-  if (!state.bidLog || !state.bidLog.length) {
+  const showLog = [
+    "bidding",
+    "dealerDiscard",
+    "bottomsDiscard",
+    "handOver",
+    "gameOver"
+  ].includes(state.phase);
+
+  if (!showLog || !state.bidLog || !state.bidLog.length) {
     log.innerHTML = "";
     log.style.display = "none";
     return;
@@ -205,10 +239,14 @@ function renderTrick() {
   for (const play of state.trick) {
     const div = document.createElement("div");
     div.className = "played-card-wrap";
+
     div.innerHTML = `
       <div class="played-by">${seatName(play.seat)}</div>
-      <div class="card ${colorClass(play.card.suit)}">${cardHtml(play.card)}</div>
+      <div class="card ${colorClass(play.card.suit)}">
+        ${cardHtml(play.card)}
+      </div>
     `;
+
     trick.appendChild(div);
   }
 }
@@ -225,11 +263,22 @@ function renderHand() {
     if (state.phase === "playing") {
       const valid = state.validCards.includes(card.id);
       button.disabled = !valid;
-      button.onclick = () => socket.emit("playCard", { cardId: card.id });
+
+      button.onclick = () => {
+        socket.emit("playCard", {
+          cardId: card.id
+        });
+      };
     } else if (state.phase === "dealerDiscard") {
-      button.onclick = () => socket.emit("dealerDiscard", { cardId: card.id });
+      button.onclick = () => {
+        socket.emit("dealerDiscard", {
+          cardId: card.id
+        });
+      };
     } else if (state.phase === "bottomsDiscard") {
-      button.onclick = () => toggleDiscard(card.id, button);
+      button.onclick = () => {
+        toggleDiscard(card.id, button);
+      };
     } else {
       button.disabled = true;
     }
@@ -251,8 +300,14 @@ function renderActions() {
       <button id="startGame">Start Game</button>
     `;
 
-    document.getElementById("fillBots").onclick = () => socket.emit("addBots");
-    document.getElementById("startGame").onclick = () => socket.emit("startGame");
+    document.getElementById("fillBots").onclick = () => {
+      socket.emit("addBots");
+    };
+
+    document.getElementById("startGame").onclick = () => {
+      socket.emit("startGame");
+    };
+
     return;
   }
 
@@ -261,11 +316,17 @@ function renderActions() {
   }
 
   if (state.phase === "bidding") {
-    const pass = makeButton("Pass", () => socket.emit("pass"));
+    const pass = makeButton("Pass", () => {
+      socket.emit("pass");
+    });
+
     actions.appendChild(pass);
 
     if (state.canBottoms) {
-      const bottoms = makeButton("Bottoms", () => socket.emit("bottoms"));
+      const bottoms = makeButton("Bottoms", () => {
+        socket.emit("bottoms");
+      });
+
       bottoms.classList.add("bottoms-button");
       actions.appendChild(bottoms);
     }
