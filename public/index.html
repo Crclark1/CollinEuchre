@@ -2,74 +2,73 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Collin Euchre</title>
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
   <main>
-    <h1>Collin Euchre</h1>
+    <section id="lobby" class="screen">
+      <div class="lobby-card">
+        <h1>Collin Euchre</h1>
+        <p>Multiplayer Euchre with Bottoms</p>
 
-    <section id="lobby">
-      <input id="name" placeholder="Your name" />
+        <input id="name" placeholder="Your name" />
 
-      <button id="single">Single Player</button>
-      <button id="create">Create Multiplayer Room</button>
+        <button id="single">Single Player</button>
+        <button id="create">Create Multiplayer Room</button>
 
-      <div class="join">
-        <input id="roomCode" placeholder="Room code" />
-        <button id="join">Join Room</button>
+        <div class="join-row">
+          <input id="roomCode" placeholder="Room code" />
+          <button id="join">Join</button>
+        </div>
       </div>
     </section>
 
     <section id="game" class="hidden">
-      <div class="topbar">
+      <header class="game-header">
         <div>
-          <strong>Room:</strong>
-          <span id="room"></span>
+          <h1>Collin Euchre</h1>
+          <div class="room-line">
+            Room: <strong id="room"></strong>
+            <button id="copyRoom">Copy Code</button>
+          </div>
         </div>
 
-        <div>
-          <strong>Score:</strong>
-          Team 1 <span id="score0">0</span>
-          -
-          Team 2 <span id="score1">0</span>
+        <div class="scoreboard">
+          <div>Team 1: <strong id="score0">0</strong></div>
+          <div>Team 2: <strong id="score1">0</strong></div>
         </div>
-      </div>
+      </header>
 
-      <p id="message"></p>
+      <div id="message" class="message"></div>
 
-      <div id="players"></div>
+      <section class="table-wrap">
+        <div class="euchre-table">
+          <div id="playerTop" class="seat seat-top"></div>
+          <div id="playerLeft" class="seat seat-left"></div>
+          <div id="playerRight" class="seat seat-right"></div>
+          <div id="playerBottom" class="seat seat-bottom"></div>
 
-      <div class="table">
-        <div>
-          <strong>Dealer:</strong>
-          <span id="dealer"></span>
+          <div class="center-area">
+            <div class="table-info">
+              <div>Dealer: <strong id="dealer"></strong></div>
+              <div>Upcard: <strong id="upcard"></strong></div>
+              <div>Trump: <strong id="trump"></strong></div>
+              <div>Tricks: <strong id="tricks"></strong></div>
+            </div>
+
+            <div id="trick" class="trick-area"></div>
+
+            <div id="actions" class="actions"></div>
+          </div>
         </div>
+      </section>
 
-        <div>
-          <strong>Upcard:</strong>
-          <span id="upcard"></span>
-        </div>
-
-        <div>
-          <strong>Trump:</strong>
-          <span id="trump"></span>
-        </div>
-
-        <div>
-          <strong>Tricks:</strong>
-          Team 1 <span id="tricks0">0</span>
-          -
-          Team 2 <span id="tricks1">0</span>
-        </div>
-      </div>
-
-      <div id="trick"></div>
-
-      <div id="actions"></div>
-
-      <h2>Your Hand</h2>
-      <div id="hand"></div>
+      <section class="hand-section">
+        <h2>Your Hand</h2>
+        <div id="hand" class="hand"></div>
+      </section>
     </section>
   </main>
 
