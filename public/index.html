@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Collin Euchre</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main>
+    <h1>Collin Euchre</h1>
+
+    <section id="lobby">
+      <input id="name" placeholder="Your name" />
+
+      <button id="single">Single Player</button>
+      <button id="create">Create Multiplayer Room</button>
+
+      <div class="join">
+        <input id="roomCode" placeholder="Room code" />
+        <button id="join">Join Room</button>
+      </div>
+    </section>
+
+    <section id="game" class="hidden">
+      <div class="topbar">
+        <div>
+          <strong>Room:</strong>
+          <span id="room"></span>
+        </div>
+
+        <div>
+          <strong>Score:</strong>
+          Team 1 <span id="score0">0</span>
+          -
+          Team 2 <span id="score1">0</span>
+        </div>
+      </div>
+
+      <p id="message"></p>
+
+      <div id="players"></div>
+
+      <div class="table">
+        <div>
+          <strong>Dealer:</strong>
+          <span id="dealer"></span>
+        </div>
+
+        <div>
+          <strong>Upcard:</strong>
+          <span id="upcard"></span>
+        </div>
+
+        <div>
+          <strong>Trump:</strong>
+          <span id="trump"></span>
+        </div>
+
+        <div>
+          <strong>Tricks:</strong>
+          Team 1 <span id="tricks0">0</span>
+          -
+          Team 2 <span id="tricks1">0</span>
+        </div>
+      </div>
+
+      <div id="trick"></div>
+
+      <div id="actions"></div>
+
+      <h2>Your Hand</h2>
+      <div id="hand"></div>
+    </section>
+  </main>
+
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="client.js"></script>
+</body>
+</html>
