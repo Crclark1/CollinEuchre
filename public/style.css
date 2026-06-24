@@ -557,3 +557,77 @@ button {
     gap: 6px;
   }
 }
+/* FIX BOTTOM PLAYER BOX OVERLAP */
+.center-area {
+  top: 28%;
+  bottom: 36%;
+}
+
+.seat-bottom {
+  bottom: 10px;
+  min-height: 98px;
+  padding: 8px 10px 10px;
+}
+
+.seat-bottom .seat-name {
+  line-height: 1;
+  margin-bottom: 2px;
+}
+
+.seat-bottom .seat-label {
+  margin: 1px 0 4px;
+}
+
+.seat-bottom .seat-stats {
+  margin-bottom: 4px;
+  gap: 6px;
+}
+
+.seat-bottom .seat-stats span {
+  padding: 3px 8px;
+  font-size: 11px;
+}
+
+.seat-bottom .trump-badge,
+.seat-bottom .pickup-badge {
+  margin: 2px 0 3px;
+  padding: 3px 8px;
+  font-size: 12px;
+}
+
+.seat-bottom .mini-cards {
+  margin-top: 4px;
+}
+
+.bid-log {
+  max-height: 58px;
+  font-size: 11px;
+  line-height: 1.2;
+}
+
+@media (max-width: 900px) {
+  .center-area {
+    top: 29%;
+    bottom: 38%;
+  }
+
+  .seat-bottom {
+    bottom: 8px;
+  }
+}
+
+@media (max-width: 760px) {
+  .center-area {
+    top: 32%;
+    bottom: 40%;
+  }
+
+  .seat-bottom {
+    bottom: 6px;
+    min-height: 94px;
+  }
+
+  .seat-bottom .seat-name {
+    font-size: 15px;
+  }
+}
