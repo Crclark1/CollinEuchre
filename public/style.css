@@ -69,21 +69,21 @@ button {
 }
 
 .game-header {
-  padding: 14px 24px;
+  padding: 10px 24px 4px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
 }
 
 .game-header h1 {
   margin: 0;
-  font-size: 36px;
+  font-size: 30px;
 }
 
 .room-line {
   margin-top: 4px;
-  font-size: 15px;
+  font-size: 14px;
 }
 
 #copyRoom {
@@ -97,36 +97,36 @@ button {
 
 .scoreboard {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   flex-wrap: wrap;
 }
 
 .score-box {
-  min-width: 180px;
+  min-width: 160px;
   background: rgba(0, 0, 0, 0.35);
-  padding: 10px 14px;
+  padding: 8px 12px;
   border-radius: 14px;
   text-align: center;
 }
 
 .score-name {
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 700;
   opacity: 0.88;
-  margin-bottom: 4px;
+  margin-bottom: 2px;
 }
 
 .score-value {
-  font-size: 30px;
+  font-size: 26px;
   font-weight: 900;
 }
 
 .message {
   text-align: center;
-  font-size: 20px;
-  font-weight: 800;
-  min-height: 34px;
-  padding: 0 12px;
+  font-size: 22px;
+  font-weight: 900;
+  min-height: 30px;
+  padding: 4px 12px 8px;
 }
 
 .table-wrap {
@@ -137,9 +137,8 @@ button {
 
 .euchre-table {
   position: relative;
-  width: min(980px, 94vw);
-  height: min(620px, 66vh);
-  min-height: 540px;
+  width: min(1060px, 96vw);
+  height: 650px;
   border-radius: 50%;
   background:
     radial-gradient(circle, #188052 0%, #0d5d38 58%, #063b23 100%);
@@ -151,19 +150,22 @@ button {
 
 .center-area {
   position: absolute;
-  inset: 24%;
-  border-radius: 40px;
+  left: 27%;
+  right: 27%;
+  top: 30%;
+  bottom: 28%;
+  border-radius: 34px;
   background: rgba(0, 0, 0, 0.18);
   display: grid;
   grid-template-rows: auto auto 1fr auto auto;
-  padding: 16px;
+  padding: 12px;
   z-index: 1;
 }
 
 .table-info {
   display: flex;
   justify-content: center;
-  gap: 16px;
+  gap: 12px;
   flex-wrap: wrap;
   font-size: 15px;
   opacity: 0.95;
@@ -175,16 +177,16 @@ button {
   align-items: center;
   justify-content: center;
   gap: 14px;
-  min-height: 130px;
+  min-height: 120px;
 }
 
 .empty-trick {
   opacity: 0.65;
-  font-size: 18px;
+  font-size: 17px;
 }
 
 .actions {
-  min-height: 70px;
+  min-height: 48px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -195,7 +197,7 @@ button {
 .actions button {
   border: 0;
   border-radius: 999px;
-  padding: 10px 14px;
+  padding: 9px 13px;
   background: white;
   color: #111;
   font-weight: 800;
@@ -211,42 +213,42 @@ button {
 
 .alone-check {
   background: rgba(255, 255, 255, 0.14);
-  padding: 10px 12px;
+  padding: 9px 12px;
   border-radius: 999px;
 }
 
 .seat {
   position: absolute;
-  width: 230px;
-  min-height: 124px;
+  width: 215px;
+  min-height: 118px;
   background: rgba(0, 0, 0, 0.26);
   border: 3px solid rgba(255, 255, 255, 0.15);
   border-radius: 22px;
-  padding: 12px;
+  padding: 10px;
   text-align: center;
-  z-index: 2;
+  z-index: 3;
 }
 
 .seat-top {
-  top: 18px;
+  top: 26px;
   left: 50%;
   transform: translateX(-50%);
 }
 
 .seat-bottom {
-  bottom: 18px;
+  bottom: 26px;
   left: 50%;
   transform: translateX(-50%);
 }
 
 .seat-left {
-  left: 18px;
+  left: 42px;
   top: 50%;
   transform: translateY(-50%);
 }
 
 .seat-right {
-  right: 18px;
+  right: 42px;
   top: 50%;
   transform: translateY(-50%);
 }
@@ -261,28 +263,29 @@ button {
 }
 
 .seat-name {
-  font-size: 22px;
+  font-size: 21px;
   font-weight: 900;
+  line-height: 1.1;
 }
 
 .seat-label {
   font-size: 13px;
   opacity: 0.8;
-  margin: 2px 0 8px;
+  margin: 3px 0 7px;
 }
 
 .seat-stats {
   display: flex;
   justify-content: center;
-  gap: 8px;
+  gap: 7px;
   flex-wrap: wrap;
-  margin-bottom: 6px;
+  margin-bottom: 5px;
 }
 
 .seat-stats span {
   background: rgba(255, 255, 255, 0.12);
   border-radius: 999px;
-  padding: 4px 8px;
+  padding: 3px 8px;
   font-size: 12px;
   font-weight: 700;
 }
@@ -291,7 +294,7 @@ button {
   display: flex;
   justify-content: center;
   gap: 4px;
-  margin-top: 8px;
+  margin-top: 6px;
 }
 
 .card-back {
@@ -318,8 +321,8 @@ button {
 }
 
 .card {
-  width: 82px;
-  height: 116px;
+  width: 78px;
+  height: 108px;
   border-radius: 12px;
   border: 3px solid #e5e5e5;
   background: white;
@@ -332,11 +335,11 @@ button {
 }
 
 .card .rank {
-  font-size: 30px;
+  font-size: 28px;
 }
 
 .card .suit {
-  font-size: 34px;
+  font-size: 32px;
 }
 
 .card.red {
@@ -363,14 +366,15 @@ button {
 }
 
 .hand-section h2 {
-  margin: 8px 0 12px;
+  margin: 10px 0 12px;
+  font-size: 30px;
 }
 
 .hand {
   display: flex;
   justify-content: center;
   gap: 12px;
-  min-height: 136px;
+  min-height: 128px;
   flex-wrap: wrap;
 }
 
@@ -401,7 +405,7 @@ button {
 }
 
 .upcard-title {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 900;
   opacity: 0.85;
   margin-bottom: 4px;
@@ -410,8 +414,8 @@ button {
 }
 
 .upcard {
-  width: 70px;
-  height: 98px;
+  width: 66px;
+  height: 92px;
   transform: rotate(-4deg);
   box-shadow: 0 0 22px rgba(247, 201, 72, 0.5);
 }
@@ -438,30 +442,45 @@ button {
 .bid-log {
   display: none;
   width: 100%;
-  max-height: 96px;
+  max-height: 72px;
   overflow: hidden;
-  margin-top: 8px;
-  padding: 8px 10px;
+  margin-top: 6px;
+  padding: 7px 9px;
   border-radius: 12px;
   background: rgba(0, 0, 0, 0.28);
-  font-size: 13px;
-  line-height: 1.35;
+  font-size: 12px;
+  line-height: 1.3;
   text-align: center;
   opacity: 0.95;
 }
 
 @media (max-width: 900px) {
+  .euchre-table {
+    height: 610px;
+  }
+
   .seat {
-    width: 180px;
-    min-height: 112px;
+    width: 175px;
+    min-height: 108px;
   }
 
   .seat-name {
     font-size: 18px;
   }
 
+  .seat-left {
+    left: 18px;
+  }
+
+  .seat-right {
+    right: 18px;
+  }
+
   .center-area {
-    inset: 28% 16%;
+    left: 24%;
+    right: 24%;
+    top: 31%;
+    bottom: 29%;
   }
 }
 
@@ -477,14 +496,15 @@ button {
   }
 
   .euchre-table {
-    height: 580px;
+    width: 98vw;
+    height: 620px;
     border-width: 10px;
   }
 
   .seat {
     width: 148px;
-    min-height: 96px;
-    padding: 10px;
+    min-height: 100px;
+    padding: 9px;
   }
 
   .seat-name {
@@ -495,25 +515,45 @@ button {
     font-size: 11px;
   }
 
+  .seat-top {
+    top: 16px;
+  }
+
+  .seat-bottom {
+    bottom: 16px;
+  }
+
+  .seat-left {
+    left: 8px;
+  }
+
+  .seat-right {
+    right: 8px;
+  }
+
   .center-area {
-    inset: 32% 14%;
+    left: 19%;
+    right: 19%;
+    top: 33%;
+    bottom: 32%;
+    padding: 8px;
   }
 
   .card {
-    width: 66px;
-    height: 94px;
+    width: 62px;
+    height: 88px;
   }
 
   .card .rank {
-    font-size: 24px;
+    font-size: 22px;
   }
 
   .card .suit {
-    font-size: 28px;
+    font-size: 26px;
   }
 
   .table-info {
-    font-size: 12px;
-    gap: 8px;
+    font-size: 11px;
+    gap: 6px;
   }
 }
