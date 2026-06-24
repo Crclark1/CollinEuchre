@@ -1,0 +1,153 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: #0f5132;
+  color: white;
+  font-family: Arial, sans-serif;
+}
+
+main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+h1,
+h2 {
+  margin-bottom: 12px;
+}
+
+input,
+button {
+  padding: 10px 14px;
+  margin: 4px;
+  border-radius: 8px;
+  border: none;
+  font-size: 16px;
+}
+
+button {
+  cursor: pointer;
+  background: #f8f9fa;
+  color: #111;
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.hidden {
+  display: none;
+}
+
+.join {
+  margin-top: 12px;
+}
+
+.topbar,
+.table {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+  background: rgba(0, 0, 0, 0.25);
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 12px;
+}
+
+#players {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.player {
+  background: rgba(255, 255, 255, 0.15);
+  padding: 12px;
+  border-radius: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.player.turn {
+  outline: 3px solid #ffc107;
+}
+
+.player.you {
+  background: rgba(13, 202, 240, 0.3);
+}
+
+.cards,
+#hand {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.card {
+  min-width: 74px;
+  min-height: 104px;
+  background: white;
+  color: #111;
+  border-radius: 10px;
+  border: 2px solid #ddd;
+  font-size: 26px;
+  font-weight: bold;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.card small {
+  font-size: 12px;
+  font-weight: normal;
+}
+
+.card.red {
+  color: #c1121f;
+}
+
+.card.black {
+  color: #111;
+}
+
+.card.selected {
+  outline: 4px solid #ffc107;
+  transform: translateY(-6px);
+}
+
+#actions {
+  margin: 18px 0;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.25);
+  border-radius: 10px;
+}
+
+.special {
+  background: #ffc107;
+}
+
+.alone {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 4px 12px;
+}
+
+@media (max-width: 700px) {
+  #players {
+    grid-template-columns: 1fr;
+  }
+
+  .card {
+    min-width: 62px;
+    min-height: 88px;
+    font-size: 22px;
+  }
+}
